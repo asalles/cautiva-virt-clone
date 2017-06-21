@@ -1,0 +1,88 @@
+# CLOUD CHICAGO
+#
+# mkdir /root/bin
+# echo '/root/bin/START | tee /root/bin/START.log' >> /etc/rc.local
+#
+# CREAR SCRIPT /root/bin/START
+# CREAR SCRIPT /root/bin/CLEAN
+# chmod +x /root/bin/START
+# chmod +x /root/bin/CLEAN
+
+
+
+8<---START----------------------------------------
+
+cat <<FIN>  /root/bin/START
+#!/bin/bash
+RELAY=10.199.101.90
+DOMAIN=cautivatech.com
+
+# START OFF
+sed -i "s;/root/bin/START;#/root/bin/START;g" /etc/rc.d/rc.local
+ 
+# RED
+rm -rf /etc/sysconfig/network-scripts/ifcfg-e*
+rm -rf /etc/udev/rules.d/70-persistent-net.rules
+for i in \$(ip addr | grep mtu | grep ": e" | tr -d ' ' | cut -d : -f 2);do
+cat <<EOF> /etc/sysconfig/network-scripts/ifcfg-\$i
+NAME=\$i
+DEVICE=\$i
+TYPE=Ethernet
+BOOTPROTO=dhcp
+ONBOOT=yes
+EOF
+done
+
+# BORRAR LOGS
+LOGB=/var/log/
+rm -rf \$LOGB/commands.log* \$LOGB/boot.log* \$LOGB/lastlog* \$LOGB/maillog* \$LOGB/messages* \$LOGB/secure* \$LOGB/up2date* \$LOGB/glusterfs/* \$LOGB/audit/* \$LOGB/sa/*
+rm ~/.bash_history
+
+# MAIL RELAY
+cat <<EOF>> /etc/postfix/main.cf
+relayhost = \$RELAY:25
+EOF
+systemctl restart postfix
+
+# MAIL DATOS
+echo "New server has born: \$(hostname)" > ~/mail.welcome
+echo "___________________________________________"  >> ~/mail.welcome
+for i in \$(ip addr | grep mtu | grep ": e" | tr -d ' ' | cut -d : -f 2);do
+echo ""        >> ~/mail.welcome
+ifconfig \$i     >> ~/mail.welcome
+done
+cat ~/mail.welcome | mail -s "READY-\$(hostname)" asalles@\$DOMAIN
+
+# REGISTRO SATELLITE
+echo MASTER CLONED: \$(date) > /etc/motd
+curl  http://10.199.101.15/pub/registra.sh | bash
+reboot
+
+FIN
+
+8<---FIN-START------------------------------------
+
+
+8<---CLEAN----------------------------------------
+
+cat <<FIN> /root/bin/CLEAN
+#!/bin/bash
+DOMAIN=cautivatech.com
+
+hostnamectl set-hostname station-\$RANDOM.\$DOMAIN
+
+sed -i "s;#/root/bin/START;/root/bin/START;g" /etc/rc.d/rc.local
+rm ~/.bash_history
+
+rm -rf /etc/udev/rules.d/70-persistent-net.rules
+
+LOGB=/var/log/
+rm -rf \$LOGB/commands.log* \$LOGB/boot.log* \$LOGB/lastlog* \$LOGB/maillog* \$LOGB/messages* \$LOGB/secure* \$LOGB/up2date* \$LOGB/glusterfs/* \$LOGB/audit/* \$LOGB/sa/*
+
+# REGISTRO SATELLITE
+rm -rf /etc/motd
+
+FIN
+
+8<---FIN-CLEAN------------------------------------
+
