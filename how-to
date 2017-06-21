@@ -8,14 +8,14 @@
 # chmod +x /root/bin/START
 # chmod +x /root/bin/CLEAN
 
-
-
-8<---START----------------------------------------
+#8<---START----------------------------------------
 
 cat <<FIN>  /root/bin/START
 #!/bin/bash
 RELAY=10.199.101.90
 DOMAIN=cautivatech.com
+
+hostnamectl set-hostname station-\$RANDOM.\$DOMAIN
 
 # START OFF
 sed -i "s;/root/bin/START;#/root/bin/START;g" /etc/rc.d/rc.local
@@ -60,10 +60,10 @@ reboot
 
 FIN
 
-8<---FIN-START------------------------------------
+#8<---FIN-START------------------------------------
 
 
-8<---CLEAN----------------------------------------
+#8<---CLEAN----------------------------------------
 
 cat <<FIN> /root/bin/CLEAN
 #!/bin/bash
@@ -84,5 +84,4 @@ rm -rf /etc/motd
 
 FIN
 
-8<---FIN-CLEAN------------------------------------
-
+#8<---FIN-CLEAN------------------------------------
